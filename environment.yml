@@ -1,0 +1,60 @@
+# One environment for the lab, on Great Lakes (Linux + NVIDIA GPU) and on a
+# laptop (macOS or Linux, CPU only) alike:
+#
+#   conda env create -f environment.yml
+#   conda activate rob498
+#   pip install -e .
+#   python scripts/check_env.py          # add --gpu on a Great Lakes GPU node
+#
+# Conda supplies only Python and pip; every package comes from pip. PyTorch
+# stopped publishing to the `pytorch` conda channel after 2.5, the
+# `pytorch-cuda` metapackage does not exist for macOS, and installing torch from
+# conda then letting pip pull VGGT's `numpy<2` on top is how the old file broke.
+#
+# GPU: the Linux torch 2.5.1 wheel bundles its own CUDA 12.4 runtime, so no CUDA
+# module is needed to *run* torch -- only an NVIDIA driver >= 525, which Great
+# Lakes GPU nodes have. gsplat compiles its CUDA kernels the first time it is
+# used, and that one step needs nvcc: on a GPU node run
+#   module load cuda/12.x      # any 12.x; `module avail cuda` lists them
+#   python scripts/check_env.py --gpu
+# once. The compiled kernels are cached in ~/.cache/torch_extensions.
+#
+# Laptops: segmentation training (Part B), the 3DGS fit (Part C) and a full-size
+# VGGT run (Part D) need the GPU. Everything else, including every contract test,
+# runs on CPU. Packages that only work on Linux + CUDA are marked below and are
+# skipped elsewhere.
+name: rob498
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      # --- core --------------------------------------------------------------
+      # numpy < 2: VGGT and open3d 0.18 are built against numpy 1.x.
+      - numpy>=1.24,<2
+      - scipy>=1.10
+      - matplotlib>=3.7
+      - scikit-image>=0.21
+      - pillow
+      - pytest>=7.4
+      - tqdm
+      - torch==2.5.1                 # Linux wheel = CUDA 12.4; macOS wheel = CPU/MPS
+      - torchvision==0.20.1
+      - open3d==0.18.0               # pinned: TSDF numbers differ across versions
+      - plyfile
+      # --- Lab 1 ---------------------------------------------------------------
+      - lpips==0.1.4                 # C1 reports LPIPS on held-out views
+      - opencv-python>=4.9,<4.12     # VGGT dependency; 4.12+ requires numpy 2
+      # VGGT (Part D), pinned to a commit so D's numbers are reproducible. The
+      # 1B-parameter weights download from Hugging Face on first use (~5 GB) --
+      # see README, "VGGT weights".
+      - vggt @ git+https://github.com/facebookresearch/vggt.git@a288dd0f14786c93483e45524328726ab7b1b4ce
+      # 3DGS rasterizer (Part C). Linux + CUDA only; JIT-compiles on first use.
+      - gsplat==1.5.3 ; sys_platform == "linux"
+      - ninja ; sys_platform == "linux"
+      # Sparse convolution (Part B: a MinkowskiNet-style U-Net, and the
+      # convolutions inside PTv3). MinkowskiEngine itself does not build against
+      # CUDA 12 / torch 2.x; spconv is the maintained equivalent.
+      - spconv-cu121==2.3.8 ; sys_platform == "linux" and platform_machine == "x86_64"

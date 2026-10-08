@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rob498-labs"
+version = "1.0.0"
+description = "Starter code for the ROB 498/599 3D Robot Perception labs"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24,<2", "scipy>=1.10"]
+
+[project.optional-dependencies]
+lab1 = ["scikit-image>=0.21", "matplotlib>=3.7", "open3d==0.18.0", "plyfile", "pillow"]
+dev = ["pytest>=7.4"]
+
+[tool.setuptools]
+packages = ["rob498", "rob498.tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["rob498/tests", "lab1/tests"]
+filterwarnings = ["ignore::DeprecationWarning"]

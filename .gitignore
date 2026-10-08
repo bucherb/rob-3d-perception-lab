@@ -1,0 +1,22 @@
+# Never commit your API key.
+.env
+*.key
+
+# Data and results are large and regenerable.
+data/
+results/
+*.ply
+*.bag
+*.pth
+*.ckpt
+outputs/
+wandb/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.venv/
+venv/
+.DS_Store
