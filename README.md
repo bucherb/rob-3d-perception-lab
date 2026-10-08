@@ -64,6 +64,38 @@ lab1/  dataset.py (provided loader)
 
 `lab1/tests/test_contracts.py` checks your code against the conventions. Run it early and often.
 
+## What you implement
+
+Every function below raises `NotImplementedError` until you write it. Its
+docstring gives the part, the points, and what it must return. The handout's
+point values are per part, and a part's report questions are graded alongside
+its code.
+
+| Part | File | Implement | Provided, use these |
+|---|---|---|---|
+| B1 (12) | `lab1/segmentation.py` | `build_model`, `train`, `evaluate` | `voxelize`, `SegmentationResult.metrics` |
+| B2 (7) | `lab1/segmentation.py` | `voxel_size_ablation` | |
+| B3 (6) | `lab1/segmentation.py` | nothing new; report questions | `SegmentationResult.subset_miou` |
+| C1 (8) | `lab1/splatting.py` | `fit_splats` | `SplatModel` (with `validate`, `memory_mb`), `psnr` |
+| C2 (6) | `lab1/splatting.py` | `extract_surface` | `filter_floaters` |
+| C3 (6) | `lab1/splatting.py` | `evaluate_geometry` | `rob498.metrics` |
+| D1 (5) | `lab1/feedforward.py` | `run_vggt` (no poses, no intrinsics) | `FeedForwardResult` |
+| D2 (5) | `lab1/feedforward.py` | nothing new; report questions | `align_to_ground_truth`, `apply_sim3` |
+| D3 (5) | `lab1/feedforward.py` | `evaluate_geometry` (takes D2's `sim3`) | `rob498.metrics` |
+| E1 (8) | `lab1/downstream.py` | `label_ground_truth_occupancy` | `sample_configurations` |
+| E2 (18) | `lab1/downstream.py` | `__init__`, `is_occupied` and `memory_mb` on each of `SegmentationOccupancy`, `SplatOccupancy`, `FeedForwardOccupancy`, and the `TSDFOccupancy` baseline | `evaluate_representations`, `time_queries` (the fixed query harness; do not modify) |
+| E3 (10) | `lab1/downstream.py` | nothing new; explain the mechanism | `find_ranking_flip` |
+| E4 (4) | report only | | |
+
+You also wire the parts together in `_run_part` in `lab1/run_lab1.py`, which
+raises `NotImplementedError` with a list of what each part calls. That is
+plumbing and earns no points on its own, but it is how you produce the
+numbers in your report:
+
+```bash
+python lab1/run_lab1.py --data data/lab1 --out results/ --part b   # or c, d, e, all
+```
+
 ## The contract tests
 
 ```bash
@@ -72,8 +104,8 @@ pytest lab1/tests -v
 
 They check **conventions and shapes, not correctness**. They cannot tell you
 your occupancy query is right. They can tell you that your poses are inverted,
-that a mask back-projects to the wrong frame, or that your `scene_graph.json`
-will not load — which is where people lose points on work they actually did.
+that a splat model stores log-scales where metres are expected, or that a
+query returns the wrong shape — which is where people lose points on work they actually did.
 `pytest rob498/tests` covers the provided package and must pass before you start.
 
 Tests for functions you have not written yet **skip** rather than fail, so the
