@@ -82,7 +82,7 @@ its code.
 | D1 (5) | `lab1/feedforward.py` | `run_vggt` (no poses, no intrinsics) | `FeedForwardResult` |
 | D2 (5) | `lab1/feedforward.py` | nothing new; report questions | `align_to_ground_truth`, `apply_sim3` |
 | D3 (5) | `lab1/feedforward.py` | `evaluate_geometry` (takes D2's `sim3`) | `rob498.metrics` |
-| E1 (8) | `lab1/downstream.py` | `label_ground_truth_occupancy` | `sample_configurations` |
+| E1 (8) | `lab1/downstream.py` | `label_ground_truth_occupancy` | `sample_task_configurations` (the 2,000 test positions, already restricted to observed space) |
 | E2 (18) | `lab1/downstream.py` | `__init__`, `is_occupied` and `memory_mb` on each of `SegmentationOccupancy`, `SplatOccupancy`, `FeedForwardOccupancy`, and the `TSDFOccupancy` baseline | `evaluate_representations`, `time_queries` (the fixed query harness; do not modify) |
 | E3 (10) | `lab1/downstream.py` | nothing new; explain the mechanism | `find_ranking_flip` |
 | E4 (4) | report only | | |

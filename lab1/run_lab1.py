@@ -102,7 +102,7 @@ def _run_part(part, args, manifest, table) -> None:
         raise NotImplementedError(
             "Part E: implement SegmentationOccupancy, SplatOccupancy, "
             "FeedForwardOccupancy and the TSDFOccupancy baseline, "
-            "label_ground_truth_occupancy, then evaluate_representations -- "
+            "label_ground_truth_occupancy on sample_task_configurations, then evaluate_representations -- "
             "which holds the query procedure fixed, as E2 requires. Finish with "
             "find_ranking_flip and explain the mechanism.")
 

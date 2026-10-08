@@ -99,6 +99,76 @@ def sample_configurations(
     return rng.uniform(lo, hi, size=(n, 3))
 
 
+def _raycasting_scene(vertices, faces):
+    import open3d as o3d
+
+    tm = o3d.t.geometry.TriangleMesh()
+    tm.vertex.positions = o3d.core.Tensor(np.asarray(vertices, np.float32))
+    tm.triangle.indices = o3d.core.Tensor(np.asarray(faces, np.int32))
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(tm)
+    return scene
+
+
+def observed_mask(points, poses, K, width, height, gt_mesh_vertices, gt_mesh_faces,
+                  robot_radius_m: float = 0.0) -> np.ndarray:
+    """PROVIDED. (N,) True where some camera saw the point.  [E1]
+
+    A point counts as observed when it projects into at least one of the given
+    camera views and lies no further from that camera than the ground-truth
+    surface at that pixel, plus ``robot_radius_m``. Everything else -- behind a
+    wall, inside a cabinet, outside every view -- is unobserved. No
+    representation built from these images can know anything about unobserved
+    space, so scoring it would measure luck, not the representation.
+    """
+    import open3d as o3d
+
+    from rob498.se3 import inverse
+
+    scene = _raycasting_scene(gt_mesh_vertices, gt_mesh_faces)
+    pts = np.asarray(points, float)
+    seen = np.zeros(len(pts), bool)
+    u, v = np.meshgrid(np.arange(width, dtype=float), np.arange(height, dtype=float))
+    dirs_c = np.stack([(u - K[0, 2]) / K[0, 0], (v - K[1, 2]) / K[1, 1], np.ones_like(u)], -1).reshape(-1, 3)
+    for T in poses:
+        dirs = dirs_c @ T[:3, :3].T
+        rays = np.hstack([np.broadcast_to(T[:3, 3], dirs.shape), dirs]).astype(np.float32)
+        depth = scene.cast_rays(o3d.core.Tensor(rays))["t_hit"].numpy().reshape(height, width)
+        pc = pts @ inverse(T)[:3, :3].T + inverse(T)[:3, 3]
+        z = pc[:, 2]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            px = np.round(K[0, 0] * pc[:, 0] / z + K[0, 2]).astype(int)
+            py = np.round(K[1, 1] * pc[:, 1] / z + K[1, 2]).astype(int)
+        ok = (z > 0) & (px >= 0) & (px < width) & (py >= 0) & (py < height)
+        dd = np.full(len(pts), -np.inf)
+        dd[ok] = depth[py[ok], px[ok]]
+        seen |= ok & (z <= dd + robot_radius_m)
+    return seen
+
+
+def sample_task_configurations(scene, n: int = 2000, seed: int = 0, robot_radius_m: float = 0.15,
+                               cameras: list[str] | None = None, oversample: int = 10) -> np.ndarray:
+    """PROVIDED. The (n, 3) configurations Part E is evaluated on.  [E1]
+
+    Draws candidates with :func:`sample_configurations` in ``scene.bounds()``
+    and keeps the first ``n`` that :func:`observed_mask` accepts, so everyone
+    with the same seed and radius gets the same points. ``scene`` is a
+    :class:`dataset.EvalScene`. Pass these points to
+    :func:`label_ground_truth_occupancy` and :func:`evaluate_representations`,
+    and report the seed and radius.
+    """
+    v, f = scene.gt_mesh()
+    lo, hi = scene.bounds()
+    cams = scene.names if cameras is None else cameras
+    for factor in (oversample, oversample * 5):
+        cand = sample_configurations(lo, hi, n=n * factor, seed=seed)
+        keep = observed_mask(cand, scene.poses(cams), scene.K, scene.width, scene.height, v, f,
+                             robot_radius_m)
+        if keep.sum() >= n:
+            return cand[keep][:n]
+    raise RuntimeError(f"only {int(keep.sum())} of {n * factor} samples are in observed space")
+
+
 def evaluate_representations(
     queries: list[OccupancyQuery],
     test_points: np.ndarray,
@@ -304,6 +374,7 @@ def label_ground_truth_occupancy(
     reliable: a closed room makes all of its free space read as "inside".
     Unsigned distance to the surface, compared against ``robot_radius_m``, is
     always well defined; restricting the sampled configurations to observed
-    space is how you keep the interiors of furniture out of the count.
+    space keeps the interiors of furniture out of the count, and
+    :func:`sample_task_configurations` already does that for you.
     """
     raise NotImplementedError("Lab 1 E1: label ground-truth occupancy")
