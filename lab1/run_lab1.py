@@ -34,13 +34,11 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=Path("results"))
     ap.add_argument("--part", choices=[*PARTS, "all"], default="all")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--task", choices=["collision", "grasp"], default="collision",
-                    help="Part E task. Pick one and commit to it (E preamble).")
     ap.add_argument("--recon-threshold", type=float, default=0.05,
                     help="One threshold for C3 and D3, so the splat and "
                          "feed-forward numbers are comparable.")
     ap.add_argument("--robot-radius", type=float, default=0.15,
-                    help="Part E collision option: radius (m) of the spherical "
+                    help="Part E: radius (m) of the spherical "
                          "robot, the same for every representation and the GT.")
     args = ap.parse_args()
 
@@ -52,7 +50,6 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     manifest = RunManifest(run_name="lab1", seed=args.seed)
-    manifest.add_param("task", args.task)
     manifest.add_param("recon_threshold_m", args.recon_threshold)
     manifest.add_param("robot_radius_m", args.robot_radius)
 

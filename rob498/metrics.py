@@ -306,12 +306,6 @@ def binary_rates(pred: np.ndarray, gt: np.ndarray) -> dict[str, float]:
     }
 
 
-def precision_at_k(ranked_correct: np.ndarray, k: int = 10) -> float:
-    """Precision@k over a ranked boolean list. Lab 1 Part E, grasp option."""
-    r = np.asarray(ranked_correct).astype(bool).ravel()[:k]
-    return float(r.sum() / k) if k > 0 else 0.0
-
-
 def bootstrap_ci(
     values: np.ndarray, n_boot: int = 10_000, alpha: float = 0.05, seed: int = 0
 ) -> tuple[float, float]:
